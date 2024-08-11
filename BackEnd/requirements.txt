@@ -59,3 +59,6 @@ typing_extensions==4.12.2
 urllib3==2.2.2
 yarl==1.9.4
 youtube-transcript-api==0.6.2
+fastapi
+uvicorn
+pypdf
