@@ -62,3 +62,4 @@ youtube-transcript-api==0.6.2
 fastapi
 uvicorn
 pypdf
+tqdm

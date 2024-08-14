@@ -1,49 +1,71 @@
 .App {
-  text-align: center;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  margin-top: 50px;
-  width: 100vh;
   height: 100vh;
+  width: 100vw;
+  text-align: center;
+  background-color: #f0f0f0;
 }
 
-form {
+.formcontainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 95%;
+  height: 95%;
+  border: 3px solid blueviolet;
+  background-color: white;
+}
+
+.header h1 {
+  color: black;
+  font-size: 5em;
+  border: 3px solid blueviolet;
+}
+
+.inputsec {
+  border: 3px solid blueviolet;
+  margin-bottom: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
+}
+
+.Flashcards {
+  width: 95%;
+  height: 79%;
+  border: 3px solid gray;
+  background-color: #efeeee;
+  border-radius: 1%;
+  margin: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: scroll;
 }
 
 input {
-  padding: 10px;
-  margin: 10px 0;
-  width: 300px;
+  padding: 15px;
+  margin: 15px 0;
+  width: 350px;
   border: 1px solid #ccc;
   border-radius: 4px;
+  font-size: 1.2em; /* Increased font size */
 }
 
 button {
-  padding: 10px 20px;
+  padding: 15px 25px;
   background-color: #318ce7;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 1.2em; /* Increased font size */
 }
 
 button:hover {
   background-color: #255ea7;
-}
-
-.submitted-link {
-  margin-top: 20px;
-}
-
-.submitted-link a {
-  color: #318ce7;
-  text-decoration: none;
-}
-
-.submitted-link a:hover {
-  text-decoration: underline;
 }

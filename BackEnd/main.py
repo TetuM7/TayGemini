@@ -9,24 +9,26 @@ class VideoAnalysisRequest(BaseModel):
 
 app=FastAPI()
 
-app.add_middleware(CORSMiddleware, allow_origins=['*'], 
-                   allow_credentials=True, 
-                   allow_methods=["*"],
-                     allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173/"],  # You can list the specific frontend URL(s)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-
-@app.post("/analyze-video")
-def analyze_video(request: VideoAnalysisRequest): 
-
-    processor = YoutubeProcessor()
-    result =processor.retrieve_youtube_documents(str(request.youtube_link))
-
-    genai_processor= GeminiProcessor(
+genai_processor= GeminiProcessor(
         model_name="gemini-pro",
         project="taygeminiai"
     )
 
-    summary= genai_processor.generate_document_summary(result, verbose =True)
+@app.post("/analyze-video")
+def analyze_video(request: VideoAnalysisRequest): 
 
-    return {"summary":summary
+    processor = YoutubeProcessor(genai_processor=genai_processor)
+    result =processor.retrieve_youtube_documents(str(request.youtube_link))
+
+    key_concepts= processor.find_key_concepts(result, group_size=2)
+
+    return {"key_concepts":key_concepts
             }
