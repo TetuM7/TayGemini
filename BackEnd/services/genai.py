@@ -79,13 +79,12 @@ class YoutubeProcessor:
 
             batch_concepts.append(output_concept)
 
-            cleaned_concepts = [concept.strip().replace("\n", "") for concept in batch_concepts]
+            cleaned_concepts = [concept.strip().replace("\n", "").replace("```json", "")for concept in batch_concepts]
 
-            parsed_concepts = [json.loads(concept) for concept in cleaned_concepts]
 
             logger.info(f"Model Output: {output_concept}")
             
             
             
 
-        return parsed_concepts
+        return cleaned_concepts
