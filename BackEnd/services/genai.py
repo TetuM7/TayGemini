@@ -71,20 +71,22 @@ class YoutubeProcessor:
                 {{"concept":"definition", "concept":"definition", ...}}""",
                 input_variables=["text"]
             )
-
-
             chain = prompt | self.GeminiProcessor.get_model()
 
             output_concept = chain.invoke({"text": group_content})
 
-            batch_concepts.append(output_concept)
 
-            cleaned_concepts = [concept.strip().replace("\n", "").replace("```json", "")for concept in batch_concepts]
+            cleaned_output = output_concept.strip().replace("```json", "").replace("```", "").replace("\n", "")
 
-
+            
             logger.info(f"Model Output: {output_concept}")
-            
+            try:
+                parsed_output = json.loads(cleaned_output)
+                batch_concepts.append(parsed_output)
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse JSON: {cleaned_output}\nError: {e}")
+
+        return batch_concepts
             
             
 
-        return cleaned_concepts
