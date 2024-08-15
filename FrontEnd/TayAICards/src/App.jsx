@@ -6,11 +6,14 @@ import Flashcard from './Flashcard';
 function App() {
   const [youtubelink, setyoutubelink] = useState('');
   const [responsedata, setresponsedata] = useState([]);
-  const [isloading, setloading] = useState( false);
+  const [isloading, setloading] = useState(false);
+  const [isloadingerror, setloadingerror] = useState(false);
+  const [iserror, seterror] = useState('');
 
   const sendlink = async () => {
     try {
       setloading(true);
+      setloadingerror(false); // Reset any previous errors
       const response = await axios.post('http://127.0.0.1:8000/analyze-video', { youtube_link: youtubelink });
       const data = response.data;
       
@@ -21,7 +24,8 @@ function App() {
       }
       
     } catch (error) {
-      console.error("Response was not posted", error);
+      seterror(error.message || "Link not valid, please try again.");
+      setloadingerror(true);
     } finally {
       setloading(false);
     }
@@ -32,27 +36,26 @@ function App() {
     setresponsedata(updatedData);
   };
 
-  const downloadcard=()=>{
-
-    //convert to strung
-    const Jsonstring= JSON.stringify(responsedata,null,2)
-    const jsonblob= new Blob([Jsonstring],{ type: 'application/json' })
+  const downloadcard = () => {
+    const Jsonstring = JSON.stringify(responsedata, null, 2);
+    const jsonblob = new Blob([Jsonstring], { type: 'application/json' });
 
     const link = document.createElement('a');
     link.href = URL.createObjectURL(jsonblob);
-    link.download = 'TAYAIdata.json'; 
+    link.download = 'Flashcards.json';
     link.click();
-    
+
     // Clean up and remove the link element
     URL.revokeObjectURL(link.href);
     link.remove();
-
-  }
+  };
 
   return (
     <div className="App">
       <div className="formcontainer">
-        <div className='header'><h1>Youtube Link to Flashcards Generator</h1></div>
+        <div className="header">
+          <h1>Youtube Link to Flashcards Generator</h1>
+        </div>
         <div className="inputsec">
           <input
             type="url"
@@ -64,7 +67,9 @@ function App() {
           <button type="button" onClick={sendlink}>Submit</button>
         </div>
         <div className="Flashcards">
-          {isloading ? (
+          {isloadingerror ? (
+            <p className="error">{iserror}</p>
+          ) : isloading ? (
             <p>Generating Flash Cards...</p>
           ) : (
             responsedata.map((term, index) => (
@@ -77,9 +82,9 @@ function App() {
             ))
           )}
         </div>
-        {isloading ? (<div> </div>):(
+        {!isloading && responsedata.length > 0 && (
           <button onClick={downloadcard} className="download-button">Download Cards</button>
-        ) }
+        )}
       </div>
     </div>
   );
