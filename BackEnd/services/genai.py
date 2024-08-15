@@ -54,7 +54,8 @@ class YoutubeProcessor:
         num_docs_per_group = len(documents) // group_size + (len(documents) % group_size > 0)
         groups = [documents[i:i + num_docs_per_group] for i in range(0, len(documents), num_docs_per_group)]
 
-        batch_concepts = []
+        batch_concepts = {}
+        arrayofkeyconcepts=[]
 
         for group in tqdm(groups):
             group_content = ""
@@ -82,11 +83,13 @@ class YoutubeProcessor:
             logger.info(f"Model Output: {output_concept}")
             try:
                 parsed_output = json.loads(cleaned_output)
-                batch_concepts.append(parsed_output)
+                batch_concepts.update(parsed_output)
             except json.JSONDecodeError as e:
                 logger.error(f"Failed to parse JSON: {cleaned_output}\nError: {e}")
 
-        return batch_concepts
+        
+        arrayofkeyconcepts=[{"concept":key, "definition":value} for key, value in batch_concepts.items()]
+        return arrayofkeyconcepts
             
             
 
