@@ -6,6 +6,7 @@ from langchain.prompts import PromptTemplate
 from tqdm import tqdm
 import logging
 import json
+from pytube.exceptions import PytubeError  # Import PytubeError for handling exceptions
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -26,26 +27,35 @@ class GeminiProcessor:
     def get_model(self):
         return self.model
 
-
 class YoutubeProcessor:
     def __init__(self, genai_processor: GeminiProcessor) -> None:
         self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
         self.GeminiProcessor = genai_processor
 
     def retrieve_youtube_documents(self, video_url: str, verbose=False):
-        loader = YoutubeLoader.from_youtube_url(video_url, add_video_info=True)
-        docs = loader.load()
-        result = self.text_splitter.split_documents(docs)
+        try:
+            loader = YoutubeLoader.from_youtube_url(video_url, add_video_info=True)
+            docs = loader.load()
+            result = self.text_splitter.split_documents(docs)
+            
+            # Retrieve metadata with error handling
+            author = result[0].metadata.get('author', 'Unknown Author')
+            length = result[0].metadata.get('length', 'Unknown Length')
+            title = result[0].metadata.get('title', 'Unknown Title')
+            total_size = len(result)
 
-        author = result[0].metadata['author']
-        length = result[0].metadata['length']
-        title = result[0].metadata['title']
-        total_size = len(result)
+            if verbose:
+                print(f"Author: {author}\nLength: {length}\nTitle: {title}\nTotal Size: {total_size}")
 
-        if verbose:
-            print(f"{author}\n{length}\n{title}\n{total_size}")
+            return result
 
-        return result
+        except PytubeError as e:
+            logger.error(f"Error loading YouTube video: {e}")
+            return None  # Return None or handle as appropriate for your application
+
+        except Exception as e:
+            logger.error(f"Unexpected error occurred: {e}")
+            return None  # Return None or handle as appropriate for your application
 
     def find_key_concepts(self, documents: list, group_size: int = 2):
         if group_size > len(documents):
@@ -55,7 +65,7 @@ class YoutubeProcessor:
         groups = [documents[i:i + num_docs_per_group] for i in range(0, len(documents), num_docs_per_group)]
 
         batch_concepts = {}
-        arrayofkeyconcepts=[]
+        arrayofkeyconcepts = []
 
         for group in tqdm(groups):
             group_content = ""
@@ -76,10 +86,8 @@ class YoutubeProcessor:
 
             output_concept = chain.invoke({"text": group_content})
 
-
             cleaned_output = output_concept.strip().replace("```json", "").replace("```", "").replace("\n", "")
 
-            
             logger.info(f"Model Output: {output_concept}")
             try:
                 parsed_output = json.loads(cleaned_output)
@@ -87,9 +95,5 @@ class YoutubeProcessor:
             except json.JSONDecodeError as e:
                 logger.error(f"Failed to parse JSON: {cleaned_output}\nError: {e}")
 
-        
-        arrayofkeyconcepts=[{"concept":key, "definition":value} for key, value in batch_concepts.items()]
+        arrayofkeyconcepts = [{"concept": key, "definition": value} for key, value in batch_concepts.items()]
         return arrayofkeyconcepts
-            
-            
-
