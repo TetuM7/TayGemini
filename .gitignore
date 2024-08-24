@@ -50,3 +50,5 @@ dist-ssr
 
 #exclude backend env
 BackEnd/env/
+
+services/taygeminiai-86212059dc6c.json
