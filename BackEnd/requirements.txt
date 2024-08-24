@@ -63,3 +63,5 @@ fastapi
 uvicorn
 pypdf
 tqdm
+git+https://github.com/pytube/pytube
+pytube
