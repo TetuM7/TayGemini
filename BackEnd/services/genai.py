@@ -36,6 +36,9 @@ class YoutubeProcessor:
         try:
             loader = YoutubeLoader.from_youtube_url(video_url, add_video_info=True)
             docs = loader.load()
+            if not docs:  # Check if docs is empty
+             logger.error("No documents loaded from YouTubeLoader.")
+             return []
             result = self.text_splitter.split_documents(docs)
             
             # Retrieve metadata with error handling
