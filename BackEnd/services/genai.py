@@ -3,6 +3,8 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains.summarize import load_summarize_chain
 from langchain_google_vertexai import VertexAI
 from langchain.prompts import PromptTemplate
+from youtube_transcript_api import YouTubeTranscriptApi
+from pytube import YouTube
 from tqdm import tqdm
 import logging
 import json
@@ -33,32 +35,31 @@ class YoutubeProcessor:
         self.GeminiProcessor = genai_processor
 
     def retrieve_youtube_documents(self, video_url: str, verbose=False):
-        try:
-            loader = YoutubeLoader.from_youtube_url(video_url, add_video_info=True)
-            docs = loader.load()
-            if not docs:  # Check if docs is empty
-             logger.error("No documents loaded from YouTubeLoader.")
-             return []
-            result = self.text_splitter.split_documents(docs)
-            
-            # Retrieve metadata with error handling
-            author = result[0].metadata.get('author', 'Unknown Author')
-            length = result[0].metadata.get('length', 'Unknown Length')
-            title = result[0].metadata.get('title', 'Unknown Title')
-            total_size = len(result)
+     try:
+        yt = YouTube(video_url)
+        video_id = yt.video_id
+        
+        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+        
+        if verbose:
+            for transcript in transcript_list:
+                print(f"Language Code: {transcript.language_code}")
+                print(f"Language: {transcript.language}")
+                print(f"Is Translatable: {transcript.is_translatable}")
+                print(f"Is Manually Created: {transcript.is_generated}")
+                print("-" * 40)
+        
+        transcript = transcript_list.find_transcript(['en'])
+        transcript_data = transcript.fetch()
+        
+        full_transcript = " ".join([entry['text'] for entry in transcript_data])
+        
+        return full_transcript
 
-            if verbose:
-                print(f"Author: {author}\nLength: {length}\nTitle: {title}\nTotal Size: {total_size}")
+     except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
 
-            return result
-
-        except PytubeError as e:
-            logger.error(f"Error loading YouTube video: {e}")
-            return None  # Return None or handle as appropriate for your application
-
-        except Exception as e:
-            logger.error(f"Unexpected error occurred: {e}")
-            return None  # Return None or handle as appropriate for your application
 
     def find_key_concepts(self, documents: list, group_size: int = 2):
         if group_size > len(documents):

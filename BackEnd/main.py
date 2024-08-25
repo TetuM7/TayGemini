@@ -28,7 +28,6 @@ def analyze_video(request: VideoAnalysisRequest):
     processor = YoutubeProcessor(genai_processor=genai_processor)
     result =processor.retrieve_youtube_documents(str(request.youtube_link))
 
-    key_concepts= processor.find_key_concepts(result, group_size=2)
 
-    return {"key_concepts":key_concepts
+    return {"key_concepts":result
             }
