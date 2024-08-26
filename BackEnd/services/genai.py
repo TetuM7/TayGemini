@@ -8,21 +8,29 @@ from pytube import YouTube
 from tqdm import tqdm
 import logging
 import json
-from pytube.exceptions import PytubeError  # Import PytubeError for handling exceptions
+from pytube.exceptions import PytubeError
 
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+class LinkCleaner:
+    def __init__(self, video_url) -> None:
+        self.start_index = 17
+        self.stop_index = self.start_index + 11
+        self.videoid = ""
+        self.video_url = video_url
+
+    def testurlextraction(self) -> str:
+        self.videoid = self.video_url[self.start_index:self.stop_index]
+        return self.videoid
 
 class GeminiProcessor:
     def __init__(self, model_name, project):
         self.model = VertexAI(model_name=model_name, project=project)
 
     def generate_document_summary(self, documents, **args):
-        if len(documents) > 10:
-            chain_type = "map_reduce"
-        else:
-            chain_type = "stuff"
-
+        chain_type = "map_reduce" if len(documents) > 10 else "stuff"
         chain = load_summarize_chain(llm=self.model, chain_type=chain_type, **args)
         return chain.run(documents)
 
@@ -35,31 +43,23 @@ class YoutubeProcessor:
         self.GeminiProcessor = genai_processor
 
     def retrieve_youtube_documents(self, video_url: str, verbose=False):
-     try:
-        yt = YouTube(video_url)
-        video_id = yt.video_id
+        ytblink = LinkCleaner(video_url)
+        linkty = ytblink.testurlextraction()
         
-        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-        
-        if verbose:
-            for transcript in transcript_list:
-                print(f"Language Code: {transcript.language_code}")
-                print(f"Language: {transcript.language}")
-                print(f"Is Translatable: {transcript.is_translatable}")
-                print(f"Is Manually Created: {transcript.is_generated}")
-                print("-" * 40)
-        
-        transcript = transcript_list.find_transcript(['en'])
-        transcript_data = transcript.fetch()
-        
-        full_transcript = " ".join([entry['text'] for entry in transcript_data])
-        
-        return full_transcript
+        try:
+            transcript_data = YouTubeTranscriptApi.get_transcript(linkty)
+            
+            if verbose:
+                logger.info("Transcript Data:")
+                for entry in transcript_data:
+                    logger.info(f"Text: {entry['text']}")
 
-     except Exception as e:
-        print(f"An error occurred: {e}")
-        return None
+            full_transcript = " ".join([entry['text'] for entry in transcript_data])
+            return full_transcript
 
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
+            return None
 
     def find_key_concepts(self, documents: list, group_size: int = 2):
         if group_size > len(documents):
@@ -72,10 +72,7 @@ class YoutubeProcessor:
         arrayofkeyconcepts = []
 
         for group in tqdm(groups):
-            group_content = ""
-
-            for doc in group:
-                group_content += doc.page_content
+            group_content = " ".join([doc.page_content for doc in group])
 
             prompt = PromptTemplate(
                 template="""
